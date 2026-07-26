@@ -1,0 +1,46 @@
+# Lint config. The code was written to a consistent style and already carries
+# `# noqa: BLE001` markers, but nothing enforced anything — there was no config
+# file at all. Rules that catch real defects are errors; cosmetic ones are not
+# retrofitted across the existing codebase.
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+exclude = ["venv", ".venv", "static/vendor"]
+
+[tool.ruff.lint]
+select = [
+    "E9",    # syntax / IO errors
+    "F",     # pyflakes: undefined names, unused imports, f-string bugs
+    "B",     # bugbear: mutable defaults, loop-variable binding, ...
+    "S",     # bandit: security anti-patterns
+    "T20",   # stray print()
+    "SIM",   # obvious simplifications
+]
+ignore = [
+    "B008",    # function call in default arg — used deliberately in tool defs
+    "S101",    # assert (tests)
+    "S104",    # binding 0.0.0.0 is the point of a self-hosted server
+    "S603", "S607",  # subprocess with a partial path — install/uninstall scripts
+    "SIM105",  # contextlib.suppress over try/except/pass — noisier here
+    # Best-effort paths (cleanup, journaling, notifications) deliberately swallow:
+    # a failure there must never break the operation it decorates. The ones that
+    # were hiding real failures now log instead; these are the remainder.
+    "S110", "S112",
+    "B904",    # `raise ... from` — the chained context is noise in tool errors
+    "S608",    # SQL built from a fixed column allow-list, never user input
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S", "T20"]
+"auth.py" = ["T20"]        # first-run admin password is deliberately printed
+"agent/tools/telnet.py" = ["S312"]   # telnet IS the feature
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+# The app's modules live at the repo root and are imported by bare name
+# (`import inventory`). `python -m pytest` puts the root on sys.path implicitly,
+# but a bare `pytest` — what CI runs — does not, so every test fails to import.
+# Making it explicit means both invocations work.
+pythonpath = ["."]

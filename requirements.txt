@@ -1,0 +1,14 @@
+# Upper bounds keep two builds of the same commit from producing different
+# images (major releases of Flask/Werkzeug/paramiko have broken things before).
+# Raise them deliberately, not by accident.
+#
+# Note: the Anthropic API is called over plain `requests` in agent/llm.py, the
+# same way every other provider is — the `anthropic` SDK was a dependency that
+# nothing imported and is no longer installed.
+Flask>=2.0,<4.0
+flask-sock>=0.7,<1.0
+Werkzeug>=2.0,<4.0
+cryptography>=3.4,<47.0
+requests>=2.25,<3.0
+paramiko>=3.0,<5.0
+gunicorn>=21.0,<24.0

@@ -1,0 +1,24 @@
+# State & secrets — never commit
+data/
+*.db
+*.db-wal
+*.db-shm
+config.json
+*.key
+*.pem
+tls/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Editor
+.vscode/
+*.swp
+
+# Agent/editor local state
+.claude/skills/
+.claude/settings.local.json
+.claude/*.tmp.*
