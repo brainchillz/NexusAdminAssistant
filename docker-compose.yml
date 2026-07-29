@@ -1,0 +1,22 @@
+services:
+  nexus-admin-assistant:
+    build: .
+    image: nexus-admin-assistant:latest
+    container_name: nexus-admin-assistant
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      # named volume — Docker owns the permissions (uid 10001), so `up -d` just
+      # works. State (config.json + naa.db) survives restarts and image rebuilds.
+      - naa-data:/data
+    environment:
+      - NAA_PORT=8080
+      # Set NAA_TLS=1 to serve HTTPS on the SAME port (https://host:8080). A
+      # self-signed cert is auto-generated on first boot; replace it with your own
+      # PEM in Settings → TLS certificate (persisted in the naa-data volume).
+      - NAA_TLS=0
+      # - NAA_ADMIN_PASSWORD=change-me   # seeds the admin on first run only
+
+volumes:
+  naa-data:

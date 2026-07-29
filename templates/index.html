@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nexus Admin Assistant</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='3' fill='%23c1550f'/><text x='8' y='12' font-size='11' text-anchor='middle' fill='white' font-family='monospace'>N</text></svg>">
+<link rel="stylesheet" href="/static/vendor/xterm.css">
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<!-- Login -->
+<div id="login" class="login-wrap" style="display:none">
+  <div class="login-card">
+    <h1>Nexus <span>Admin Assistant</span></h1>
+    <div class="sub">Your AI IT employee for the homelab</div>
+    <input id="lg-user" placeholder="username" autocomplete="username">
+    <input id="lg-pass" type="password" placeholder="password" autocomplete="current-password">
+    <button onclick="doLogin()">Sign in</button>
+    <div class="err" id="lg-err"></div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app" style="display:none">
+  <header>
+    <div class="brand">Nexus <span>Admin Assistant</span></div>
+    <div class="llm-badge" id="llm-badge" onclick="openSettings()" style="cursor:pointer">LLM: <b id="llm-model">not set</b></div>
+    <div class="env-badge" id="envelope-badge" style="display:none"></div>
+    <div class="spacer"></div>
+    <div class="hbtns">
+      <button class="ghost sm" id="btn-term" onclick="toggleTerm()">Terminal</button>
+      <button class="ghost sm" onclick="openMemory()">Memory</button>
+      <button class="ghost sm" onclick="openSkills()">Skills</button>
+      <button class="ghost sm" onclick="openChecks()">Checks</button>
+      <button class="ghost sm" onclick="openJobs()">Jobs</button>
+      <button class="ghost sm" id="btn-creds" onclick="openCreds()" style="display:none">Credentials</button>
+      <button class="ghost sm" id="btn-users" onclick="openUsers()" style="display:none">Users</button>
+      <button class="ghost sm" id="btn-settings" onclick="openSettings()" style="display:none">Settings</button>
+      <button class="ghost sm" id="btn-audit" onclick="openAudit()" style="display:none">Audit</button>
+      <span class="muted small" id="whoami"></span>
+      <button class="ghost sm" onclick="doLogout()">Sign out</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="side-h"><b>Hosts</b><div class="spacer"></div><button class="sm" onclick="openHost()">+ Add</button></div>
+      <input class="hostq" id="hostq" placeholder="filter hosts…" oninput="renderHosts()">
+      <div class="tagbar" id="tagbar"></div>
+      <div class="side-scroll" id="hostlist"></div>
+      <div class="side-sec"><b class="muted small">Conversations</b><span class="spacer"></span><button class="ghost sm" id="btn-clear-convos" onclick="clearConvos()" title="delete all conversations in this list" style="display:none">Clear all</button></div>
+      <div id="convolist"></div>
+    </aside>
+
+    <!-- Chat -->
+    <section class="chat-col">
+      <div class="chat-ctx" id="chat-ctx"><span class="muted">No host selected — pick one on the left, or chat generally.</span></div>
+      <div class="chat-scroll" id="chat"></div>
+      <div class="composer">
+        <textarea id="composer" placeholder="Describe what you want done…  (Enter to send, Shift+Enter for newline)" rows="1"
+          onkeydown="composerKey(event)" oninput="autogrow(this)"></textarea>
+        <button class="send" id="send-btn" onclick="send()">Send</button>
+        <button class="danger send" id="stop-btn" onclick="stopRun()" style="display:none">Stop</button>
+      </div>
+    </section>
+
+    <!-- Terminal pane -->
+    <aside class="term-col hidden" id="termcol">
+      <div class="term-h"><b>Live terminal</b>
+        <button class="ghost sm" id="shell-btn" onclick="openShell()">Open shell</button>
+        <div class="spacer"></div><span id="term-host" class="muted"></span></div>
+      <div class="term-body" id="term"></div>
+    </aside>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+<script src="/static/vendor/xterm.js"></script>
+<script src="/static/vendor/addon-fit.js"></script>
+<script src="/static/js/modals.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

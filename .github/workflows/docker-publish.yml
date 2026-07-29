@@ -1,0 +1,87 @@
+name: docker-publish
+
+# Build the multi-arch container and publish it to GHCR. Uses the built-in
+# GITHUB_TOKEN — no secrets to configure.
+#
+# RELEASES ARE TAG-DRIVEN. Pushing source or documentation does NOT rebuild the
+# image; you cut a version tag when you want deployments to move:
+#
+#     git tag -a v1.2.0 -m "what changed" && git push origin v1.2.0
+#
+# That publishes :1.2.0, :1.2, :sha-<commit> and moves :latest (which is what
+# `docker compose pull` follows). Building on every push meant a typo fix in the
+# README re-tagged the image everyone deploys, for no change at all.
+#
+# workflow_dispatch is here for an ad-hoc build; it deliberately does NOT move
+# :latest, so a manual test build can never become what hosts pull.
+#
+# The test suite runs as part of THIS workflow (below) rather than being hoped
+# for in a separate one — a release that cannot pass its own tests is not built.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
+
+  build-and-push:
+    needs: tests           # no green suite, no image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU (arm64 emulation)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image metadata (tags + labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/nexusadminassistant
+          # latest=auto moves :latest for a real semver release and leaves it
+          # alone for a prerelease (v1.2.0-rc1) or a manual dispatch build.
+          # NOTE: the old `enable={{is_default_branch}}` rule is false on a tag
+          # push, so keeping it here would have silently frozen :latest the
+          # moment releases became tag-driven — and hosts pull :latest.
+          flavor: |
+            latest=auto
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Summary
+        run: |
+          echo "### Published" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "Deploy: \`docker compose pull && docker compose up -d\`" >> $GITHUB_STEP_SUMMARY
